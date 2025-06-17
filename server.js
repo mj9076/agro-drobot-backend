@@ -8,11 +8,15 @@ const bodyParser = require('body-parser');
 const app = express();
 const server = http.createServer(app);
 
+// Get CORS origin from environment variable, fallback to localhost for local dev
+// You will set this environment variable on Render dashboard
+const CLIENT_ORIGIN = process.env.CORS_CLIENT_ORIGIN || "http://localhost:3000"; // <--- THIS LINE IS ADDED/MODIFIED
+
 // Configure Socket.IO with CORS
 const io = new Server(server, {
   cors: {
-    // MODIFIED: Allow both localhost and your specific network IP for the React app
-    origin: ["http://localhost:3000", "http://192.168.0.94:3000"], 
+    // MODIFIED: Allows the origin set by Render's environment variable, plus local dev origins
+    origin: [CLIENT_ORIGIN, "http://localhost:3000", "http://192.168.0.94:3000"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
   }
@@ -22,8 +26,8 @@ const PORT = process.env.PORT || 5000;
 
 // --- Middleware ---
 app.use(cors({
-  // MODIFIED: Allow both localhost and your specific network IP for Express routes
-  origin: ["http://localhost:3000", "http://192.168.0.94:3000"],
+  // MODIFIED: Allows the origin set by Render's environment variable, plus local dev origins
+  origin: [CLIENT_ORIGIN, "http://localhost:3000", "http://192.168.0.94:3000"],
   credentials: true
 }));
 app.use(bodyParser.json());
@@ -114,7 +118,8 @@ io.on('connection', (socket) => {
 // --- Start the server ---
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`ESP32 posts data to: http://192.168.0.94:${PORT}/api/sensor-data`); // Updated IP for console log
-  console.log(`ESP32 polls commands from: http://192.168.0.94:${PORT}/api/commands`); // Updated IP for console log
-  console.log(`React app connects to Socket.IO at ws://192.168.0.94:${PORT} (or ws://localhost:${PORT})`); // Clarified for console log
+  console.log(`CORS Client Origin allowed: ${CLIENT_ORIGIN}`); // <--- THIS LINE IS ADDED/MODIFIED
+  console.log(`ESP32 posts data to: http://192.168.0.94:${PORT}/api/sensor-data`);
+  console.log(`ESP32 polls commands from: http://192.168.0.94:${PORT}/api/commands`);
+  console.log(`React app connects to Socket.IO at ws://192.168.0.94:${PORT} (or ws://localhost:${PORT})`);
 });
